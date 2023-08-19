@@ -223,13 +223,17 @@ void insertStation(StationNode **root, Station *station) {
 }
 
 void transplant(StationNode **root, StationNode *x, StationNode *y) {
-    if (x->parent == NULL)  *root = y;
-    else if (x == x->parent->left)  x->parent->left = y;
-    else    x->parent->right = y;
-    y->parent = x->parent;
+    if (x != NULL && x->parent == NULL)  *root = y;
+    else if (x != NULL && x == x->parent->left)  x->parent->left = y;
+    else if (x != NULL)   x->parent->right = y;
+    if (y != NULL && x!= NULL)
+        y->parent = x->parent;
 }
 
 void removeFixup(StationNode **root, StationNode *x) {
+    if (x == NULL)
+        return;
+
     while (x != *root && x->color == BLACK) {
         if (x == x->parent->left) {
             StationNode *w = x->parent->right;
@@ -295,7 +299,8 @@ void removeFixup(StationNode **root, StationNode *x) {
 }
 
 void removeStation(StationNode **root, StationNode *x) {
-    if (x == NULL) return;
+    if (x == NULL)
+        return;
 
     StationNode *y = x;
     StationNode *z;
@@ -303,46 +308,48 @@ void removeStation(StationNode **root, StationNode *x) {
 
     if (x->left == NULL) {
         z = x->right;
-        /*removeFixup(root, x->right);
-        free(x);
-        x = NULL;*/
         transplant(root, x, x->right);
     }
     else if (x->right == NULL) {
         z = x->left;
-        /*removeFixup(root, x->left);
-        free(x);
-        x = NULL;*/
         transplant(root, x, x->left);
     }
     else {
-        y = x->right;
 
-        while (y->left != NULL)
+        if (x != NULL)
+            y = x->right;
+
+        while (y != NULL && y->left != NULL)
             y = y->left;
 
         yOriginalColor = y->color;
         z = y->right;
 
-        if (y->parent == x)
-            z->parent = y;
-        else {
-            /*removeFixup(root, y->right);
-            y->right = x->right;
-            y->right->parent = y;*/
+        if (x != NULL && y != x->right) {
             transplant(root, y, y->right);
-            y->right = x->right;
-            y->right->parent = y;
+
+            if (y != NULL) {
+                y->right = x->right;
+
+                if (y->right != NULL)
+                    y->right->parent = y;
+            }
+        }
+        else {
+            if (z != NULL)
+                z->parent = y;//segmentation fault because z is null here
         }
 
-        //removeFixup(root, y);
         transplant(root, x, y);
-        y->left = x->left;
-        y->left->parent = y;
-        y->color = x->color;
-        z = y;
-        //free(x);
-        //x = NULL;
+
+        if (y != NULL && x != NULL)
+            y->left = x->left;
+
+        if (y != NULL && y->left != NULL)
+            y->left->parent = y;
+
+        if (y != NULL)
+            y->color = x->color;
     }
 
     if (yOriginalColor == BLACK)
