@@ -104,19 +104,16 @@ void buildMaxHeap(Station *station) {
 
 
 void leftRotate(StationNode **root, StationNode *x) {
-    if (x == NULL) 
+    if (x == NULL || x->right == NULL)
         return;
 
     StationNode *y = x->right;
+    x->right = y->left;
 
-    if (y != NULL)
-        x->right = y->left;
-
-    if (y != NULL && y->left != NULL)
+    if (y->left != NULL)
         y->left->parent = x;
 
-    if (y != NULL)
-        y->parent = x->parent;
+    y->parent = x->parent;
 
     if (x->parent == NULL)
         *root = y;
@@ -125,82 +122,76 @@ void leftRotate(StationNode **root, StationNode *x) {
     else
         x->parent->right = y;
 
-    if (y != NULL)
-        y->left = x;
-        
-    if (x != NULL)
-        x->parent = y;
+    y->left = x;
+    x->parent = y;
 }
 
-void rightRotate(StationNode **root, StationNode *x) {
-    if (x == NULL)
+void rightRotate(StationNode **root, StationNode *y) {
+    if (y == NULL || y->left == NULL)
         return;
 
-    StationNode *y = x->left;
+    StationNode *x = y->left;
+    y->left = x->right;
 
-    if (y != NULL)
-        x->left = y->right;
+    if (x->right != NULL)
+        x->right->parent = y;
 
-    if (y != NULL && y->right != NULL)
-        y->right->parent = x;
+    x->parent = y->parent;
 
-    if (y != NULL)
-        y->parent = x->parent;
-
-    if (x->parent == NULL)
-        *root = y;
-    else if (x == x->parent->right)
-        x->parent->right = y;
+    if (y->parent == NULL)
+        *root = x;
+    else if (y == y->parent->right)
+        y->parent->right = x;
     else
-        x->parent->left = y;
+        y->parent->left = x;
 
-    if (y != NULL)
-        y->right = x;
-
-    if (x != NULL)
-        x->parent = y;
+    x->right = y;
+    y->parent = x;
 }
 
-void insertFixup(StationNode **root, StationNode *x) {
-    while (x != *root && x->parent->color == RED) {
-        if (x->parent == x->parent->parent->left) {
-            StationNode *y = x->parent->parent->right;
+void insertFixup(StationNode **root, StationNode *z) {
+    if (z == NULL)
+        return;
+
+    while (z != *root && z->parent != NULL && z->parent->color == RED) {
+        if (z->parent == z->parent->parent->left) {
+            StationNode *y = z->parent->parent->right;
 
             if (y != NULL && y->color == RED) {
-                x->parent->color = BLACK;
+                z->parent->color = BLACK;
                 y->color = BLACK;
-                x->parent->parent->color = RED;
-                x = x->parent->parent;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
             }
             else {
-                if (x == x->parent->right) {
-                    x = x->parent;
-                    leftRotate(root, x);
+                if (z == z->parent->right) {
+                    z = z->parent;
+                    leftRotate(root, z);
                 }
 
-                x->parent->color = BLACK;
-                x->parent->parent->color = RED;
-                rightRotate(root, x->parent->parent);
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                rightRotate(root, z->parent->parent);
             }
         }
         else {
-            StationNode *y = x->parent->parent->left;
+            StationNode *y = z->parent->parent->left;
 
             if (y != NULL && y->color == RED) {
-                x->parent->color = BLACK;
+                z->parent->color = BLACK;
                 y->color = BLACK;
-                x->parent->parent->color = RED;
-                x = x->parent->parent;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
             }
             else {
-                if (x == x->parent->left) {
-                    x = x->parent;
-                    rightRotate(root, x);
+                if (z == z->parent->left) {
+                    z = z->parent;
+                    rightRotate(root, z);
                 }
 
-                x->parent->color = BLACK;
-                x->parent->parent->color = RED;
-                leftRotate(root, x->parent->parent);
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                leftRotate(root, z->parent->parent);
             }
         }
     }
@@ -209,7 +200,7 @@ void insertFixup(StationNode **root, StationNode *x) {
 }
 
 void insertStation(StationNode **root, Station *station) {
-    StationNode *z = malloc(sizeof(StationNode));
+    StationNode *z = (StationNode *) malloc(sizeof(StationNode));
     z->station = station;
     z->left = NULL;
     z->right = NULL;
@@ -240,149 +231,148 @@ void insertStation(StationNode **root, Station *station) {
     insertFixup(root, z);
 }
 
-void transplant(StationNode **root, StationNode *x, StationNode *y) {
-    if (x != NULL && x->parent == NULL)  *root = y;
-    else if (x != NULL && x->parent != NULL && x == x->parent->left)  x->parent->left = y;
-    else if (x != NULL && x->parent != NULL)   x->parent->right = y;
-    if (y != NULL && x!= NULL)
-        y->parent = x->parent;
+void transplant(StationNode **root, StationNode *u, StationNode *v) {
+    if (u->parent == NULL)
+        *root = v;
+    else if (u == u->parent->left)
+        u->parent->left = v;
+    else
+        u->parent->right = v;
+
+    if (v != NULL)
+        v->parent = u->parent;
 }
+
+StationNode* minimumNode(StationNode *node) {
+    while (node != NULL && node->left != NULL)
+        node = node->left;
+    return node;
+}
+
 
 void removeFixup(StationNode **root, StationNode *x) {
     if (x == NULL)
         return;
 
-    while (x != NULL && x != *root && x->color == BLACK) {
-        if (x->parent != NULL && x == x->parent->left) {
+    while (x != *root && x->parent != NULL && x->color == BLACK) {
+        if (x == x->parent->left) {
             StationNode *w = x->parent->right;
+            if (w == NULL)
+                return;
 
-            //if (w == NULL)
-            //    return;
-
-            if (w != NULL && w->color == RED) {
+            if (w->color == RED) {
                 w->color = BLACK;
                 x->parent->color = RED;
                 leftRotate(root, x->parent);
                 w = x->parent->right;
             }
 
-            if (w != NULL && w->left != NULL && w->right != NULL && w->left->color == BLACK && w->right->color == BLACK) {
+            if (w == NULL)
+                return;
+
+            if ((w->left == NULL || w->left->color == BLACK) && (w->right == NULL || w->right->color == BLACK)) {
                 w->color = RED;
                 x = x->parent;
-            }
-            else {
-                if (w != NULL && w->right != NULL && w->left != NULL && w->right->color == BLACK) {
-                    w->left->color = BLACK;
+            } else {
+                if (w->right == NULL || w->right->color == BLACK) {
+                    if (w->left != NULL)
+                        w->left->color = BLACK;
+
                     w->color = RED;
                     rightRotate(root, w);
                     w = x->parent->right;
                 }
-
-                if (w != NULL)
-                    w->color = x->parent->color;
-
+                w->color = x->parent->color;
                 x->parent->color = BLACK;
-
-                if (w != NULL && w->right != NULL)
+                if (w->right != NULL)
                     w->right->color = BLACK;
                 leftRotate(root, x->parent);
                 x = *root;
             }
-        }
-        else if (x->parent != NULL) {
+        } else {
             StationNode *w = x->parent->left;
+            if (w == NULL)
+                return;
 
-            if (w != NULL && w->color == RED) {
+            if (w->color == RED) {
                 w->color = BLACK;
                 x->parent->color = RED;
                 rightRotate(root, x->parent);
                 w = x->parent->left;
             }
 
-            if (w != NULL && w->left != NULL && w->right != NULL && w->right->color == BLACK && w->left->color == BLACK) {
+            if (w == NULL)
+                return;
+
+            if ((w->right == NULL || w->right->color == BLACK) && (w->left == NULL || w->left->color == BLACK)) {
                 w->color = RED;
                 x = x->parent;
-            }
-            else {
-                if (w != NULL && w->left != NULL && w->right != NULL && w->left->color == BLACK) {
-                    w->right->color = BLACK;
+            } else {
+                if (w->left == NULL || w->left->color == BLACK) {
+                    if (w->right != NULL)
+                        w->right->color = BLACK;
+
                     w->color = RED;
                     leftRotate(root, w);
                     w = x->parent->left;
                 }
-
-                if (w != NULL)
-                    w->color = x->parent->color;
-
+                w->color = x->parent->color;
                 x->parent->color = BLACK;
 
-                if (w != NULL && w->left != NULL)
+                if (w->left != NULL)
                     w->left->color = BLACK;
+
                 rightRotate(root, x->parent);
                 x = *root;
             }
         }
     }
 
-    x->color = BLACK;
+    if (x != NULL)
+        x->color = BLACK;
 }
 
-void removeStation(StationNode **root, StationNode *x) {
-    if (x == NULL)
+void removeStation(StationNode **root, StationNode *z) {
+    if (z == NULL)
         return;
 
-    StationNode *y = x;
-    StationNode *z;
+    StationNode *y = z;
+    StationNode *x;
     Color yOriginalColor = y->color;
 
-    if (x->left == NULL) {
-        z = x->right;
-        transplant(root, x, x->right);
-    }
-    else if (x->right == NULL) {
-        z = x->left;
-        transplant(root, x, x->left);
-    }
-    else {
-        if (x != NULL)
-            y = x->right;
-
-        while (y != NULL && y->left != NULL)
-            y = y->left;
-
+    if (z->left == NULL) {
+        x = z->right;
+        transplant(root, z, z->right);
+    } else if (z->right == NULL) {
+        x = z->left;
+        transplant(root, z, z->left);
+    } else {
+        y = minimumNode(z->right);
         yOriginalColor = y->color;
-        z = y->right;
+        x = y->right;
 
-        if (x != NULL && y != x->right) {
-            transplant(root, y, y->right);
-
-            if (y != NULL) {
-                y->right = x->right;
-
-                if (y->right != NULL)
-                    y->right->parent = y;
-            }
-        }
+        if (y->parent == z && x != NULL)
+            x->parent = y;
         else {
-            if (z != NULL)
-                z->parent = y;
+            transplant(root, y, y->right);
+            y->right = z->right;
+
+            if (y->right != NULL)
+                y->right->parent = y;
         }
 
-        transplant(root, x, y);
+        transplant(root, z, y);
+        y->left = z->left;
 
-        if (y != NULL && x != NULL)
-            y->left = x->left;
-
-        if (y != NULL && y->left != NULL)
+        if (y->left != NULL)
             y->left->parent = y;
-
-        if (y != NULL)
-            y->color = x->color;
+        y->color = z->color;
     }
 
     if (yOriginalColor == BLACK)
-        removeFixup(root, z);
-    free(x);
+        removeFixup(root, x);
+
+    free(z);
 }
 
 StationNode* searchStation(StationNode *root, int32_t km) {
