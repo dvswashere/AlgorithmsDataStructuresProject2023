@@ -71,16 +71,16 @@ bool removeCar(Station *station, int32_t car) {
 }
 
 void maxHeapify(Station *station, int32_t n) {
-    int32_t left = 2*n;
-    int32_t right = 2*n + 1;
+    int32_t left = (n << 1) + 1;
+    int32_t right = (n << 1) + 2;
     int32_t largest;
 
-    if (left <= station->carsInStation && station->cars[left] > station->cars[n])
+    if (left < station->carsInStation && station->cars[left] > station->cars[n])
         largest = left;
     else
         largest = n;
 
-    if (right <= station->carsInStation && station->cars[right] > station->cars[largest])
+    if (right < station->carsInStation && station->cars[right] > station->cars[largest])
         largest = right;
 
     if (largest != n) {
@@ -372,6 +372,9 @@ void removeStation(StationNode **root, StationNode *z) {
     if (yOriginalColor == BLACK)
         removeFixup(root, x);
 
+    if (z->station != NULL)
+        free(z->station->cars);
+    free(z->station);
     free(z);
 }
 
@@ -404,6 +407,18 @@ StationNode* nextStation(StationNode *root) {
     return y;
 }
 
+void deallocateTree(StationNode *root) {
+    if (root == NULL)
+        return;
+
+    deallocateTree(root->left);
+    deallocateTree(root->right);
+
+    if (root->station != NULL)
+        free(root->station->cars);
+    free(root->station);
+    free(root);
+}
 
 
 /*
@@ -555,4 +570,6 @@ int main(){
             printf("pianififca percorso\n");
         }
     }
+
+    deallocateTree(root);
 }
