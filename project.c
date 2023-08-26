@@ -474,6 +474,8 @@ void shortestPathSmallToBig(Path *path) {
             current = start;
         } else if (current + 1 == end) {
             printf("nessun percorso\n");
+            free(path->stations);
+            free(path);
             return;
         } else {
             current++;
