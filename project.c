@@ -41,9 +41,9 @@ typedef struct {
  * The cars are stored as a heap using an array in each station.
  */
 
-
-
 int32_t maxAutonomy(Station *station) {
+    if (station->carsInStation == 0)
+        return 0;
     return station->cars[0];
 }
 
@@ -102,7 +102,6 @@ void buildMaxHeap(Station *station) {
 /*
  * The stations are stored as a red-black tree nodes.
  */
-
 
 void leftRotate(StationNode **root, StationNode *x) {
     if (x == NULL || x->right == NULL)
@@ -249,7 +248,6 @@ StationNode* minimumNode(StationNode *node) {
         node = node->left;
     return node;
 }
-
 
 void removeFixup(StationNode **root, StationNode *x) {
     if (x == NULL)
@@ -422,44 +420,78 @@ void deallocateTree(StationNode *root) {
 }
 
 
+
 /*
  * The shortest path is calculated using a greedy algorithm on an array of stations, from the START station to the END.
  */
-
     // the following function is used to build the full path of stations from the START to the END
-Path buildFullPath(StationNode *root, int32_t start, int32_t end) {
-    Path path;
-    path.pathSize = 0;
-    path.sizeFactor = 1;
-    path.stations = malloc(STD_PATH_SIZE * path.sizeFactor * sizeof(Station));
+Path *buildFullPath(StationNode *startNode, StationNode *endNode) {
+    Path *path = malloc(sizeof(Path));
+    path->pathSize = 0;
+    path->sizeFactor = 1;
+    path->stations = malloc(STD_PATH_SIZE * sizeof(Station));
 
-    StationNode *current = searchStation(root, start);
+    StationNode *current = startNode;
 
-    while (current->station->km != end) {
-        if (path.pathSize == path.sizeFactor * STD_PATH_SIZE) {
-            path.sizeFactor += 1;
-            path.stations = realloc(path.stations, path.sizeFactor * STD_PATH_SIZE * sizeof(Station));
+    while (current->station->km != endNode->station->km) {
+        if (path->pathSize == path->sizeFactor * STD_PATH_SIZE) {
+            path->sizeFactor += 1;
+            path->stations = realloc(path->stations, path->sizeFactor * STD_PATH_SIZE * sizeof(Station));
         }
 
-        path.stations[path.pathSize] = *current->station;
-        path.pathSize++;
+        path->stations[path->pathSize] = *current->station;
+        path->pathSize++;
         current = nextStation(current);
     }
 
-    if (path.pathSize == path.sizeFactor) {
-        path.sizeFactor += 1;
-        path.stations = realloc(path.stations, path.sizeFactor * STD_PATH_SIZE * sizeof(Station));
+    if (path->pathSize == path->sizeFactor * STD_PATH_SIZE) {
+        path->sizeFactor += 1;
+        path->stations = realloc(path->stations, path->sizeFactor * STD_PATH_SIZE * sizeof(Station));
     }
 
-    path.stations[path.pathSize] = *current->station;
-    path.pathSize++;
+    path->stations[path->pathSize] = *current->station;
+    path->pathSize++;
 
     return path;
 }
 
-    // the following function is used to calculate the shortest path from the START to the END
+int32_t abs(int32_t n) {
+    if (n < 0)
+        return 0 - n;
+    return n;
+}
 
-int main(){
+    // the following function is used to calculate the shortest path from the START to the END
+void shortestPathSmallToBig(Path *path) {
+    int32_t current = 0;
+    int32_t start = 0;
+    int32_t end = path->pathSize - 1;
+
+    while (current < end) {
+        if (path->stations[current].km + maxAutonomy(&path->stations[current]) >= abs(path->stations[end].km)) {
+            path->stations[current].km = path->stations[current].km * -1; // mark as used station
+            end = current;
+            current = start;
+        } else if (current + 1 == end) {
+            printf("nessun percorso\n");
+            return;
+        } else {
+            current++;
+        }
+    }
+
+    for (int i = 0; i < path->pathSize - 1; i++) {
+        if (path->stations[i].km <= 0) {
+            path->stations[i].km = path->stations[i].km * -1; // restore the original value
+            printf("%d ", path->stations[i].km);
+        }
+    }
+    printf("%d\n", path->stations[path->pathSize-1].km);
+    free(path->stations);
+    free(path);
+}
+
+int main() {
     char currentCommand[20];
     int32_t distance, start, end, numCars, car;
     StationNode *root = NULL;
@@ -498,7 +530,7 @@ int main(){
                     station = malloc(sizeof(Station));
                     station->km = distance;
                     station->carsInStation = 0;
-                    station->cars = malloc(MAX_CARS_PER_STATION * sizeof(int32_t));
+                    station->cars = malloc(sizeof(int32_t) * MAX_CARS_PER_STATION); // nel test 39 da malloc() corrupted top size
 
                     assert(fscanf(stdin, "%d", &numCars));
 
@@ -568,7 +600,21 @@ int main(){
 
         // pianifica-percorso
         else if (currentCommand[0] == 'p') {
-            printf("pianififca percorso\n");
+            assert(fscanf(stdin, "%d", &start));
+            assert(fscanf(stdin, "%d", &end));
+
+            StationNode *startNode = searchStation(root, start);
+            StationNode *endNode = searchStation(root, end);
+
+            if (startNode == NULL || endNode == NULL)
+                printf("nessun percorso\n");
+            else if (start == end)
+                printf("%d\n", start);
+            else if (start < end) {
+                shortestPathSmallToBig(buildFullPath(startNode, endNode));
+            } else {
+                printf("BIG TO SMALL\n");
+            }
         }
     }
 
