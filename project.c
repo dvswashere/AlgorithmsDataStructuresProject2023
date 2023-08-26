@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
+#include <assert.h>
 
 #define MAX_CARS_PER_STATION 512
 #define STD_PATH_SIZE 64
@@ -468,7 +469,7 @@ int main(){
 
         // aggiungi-stazione
         if (currentCommand[0] == 'a' && currentCommand[9] == 's') {
-            fscanf(stdin, "%d", &distance);
+            assert(fscanf(stdin, "%d", &distance));
 
             if (root == NULL) {
                 station = malloc(sizeof(Station));
@@ -476,10 +477,10 @@ int main(){
                 station->carsInStation = 0;
                 station->cars = malloc(MAX_CARS_PER_STATION * sizeof(int32_t));
 
-                fscanf(stdin, "%d", &numCars);
+                assert(fscanf(stdin, "%d", &numCars));
 
                 for(int i=0; i<numCars; i++) {
-                    fscanf(stdin, "%d", &car);
+                    assert(fscanf(stdin, "%d", &car));
                     insertCar(station, car);
                 }
                 buildMaxHeap(station);
@@ -499,10 +500,10 @@ int main(){
                     station->carsInStation = 0;
                     station->cars = malloc(MAX_CARS_PER_STATION * sizeof(int32_t));
 
-                    fscanf(stdin, "%d", &numCars);
+                    assert(fscanf(stdin, "%d", &numCars));
 
                     for(int i=0; i<numCars; i++) {
-                        fscanf(stdin, "%d", &car);
+                        assert(fscanf(stdin, "%d", &car));
                         insertCar(station, car);
                     }
                     buildMaxHeap(station);                    
@@ -518,7 +519,7 @@ int main(){
 
         // demolisci-stazione
         else if (currentCommand[0] == 'd') {
-            fscanf(stdin, "%d", &distance);
+            assert(fscanf(stdin, "%d", &distance));
             StationNode *searchResult = searchStation(root, distance);
 
             if (searchResult == NULL) 
@@ -531,8 +532,8 @@ int main(){
 
         // aggiungi-auto
         else if (currentCommand[0] == 'a' && currentCommand[9] == 'a') {
-            fscanf(stdin, "%d", &distance);
-            fscanf(stdin, "%d", &car);
+            assert(fscanf(stdin, "%d", &distance));
+            assert(fscanf(stdin, "%d", &car));
             StationNode *searchResult = searchStation(root, distance);
 
             if (searchResult == NULL)
@@ -549,8 +550,8 @@ int main(){
 
         // rottama-auto
         else if (currentCommand[0] == 'r') {
-            fscanf(stdin, "%d", &distance);
-            fscanf(stdin, "%d", &car);
+            assert(fscanf(stdin, "%d", &distance));
+            assert(fscanf(stdin, "%d", &car));
             StationNode *searchResult = searchStation(root, distance);
 
             if (searchResult == NULL)
