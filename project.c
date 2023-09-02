@@ -406,6 +406,25 @@ StationNode* nextStation(StationNode *root) {
     return y;
 }
 
+StationNode* prevStation(StationNode *root) {
+    if (root->left != NULL) {
+        root = root->left;
+
+        while (root->right != NULL)
+            root = root->right;
+
+        return root;
+    }
+
+    StationNode *y = root->parent;
+
+    while (y != NULL && root == y->left) {
+        root = y;
+        y = y->parent;
+    }
+    return y;
+}
+
 void deallocateTree(StationNode *root) {
     if (root == NULL)
         return;
@@ -441,7 +460,11 @@ Path *buildFullPath(StationNode *startNode, StationNode *endNode) {
 
         path->stations[path->pathSize] = *current->station;
         path->pathSize++;
-        current = nextStation(current);
+
+        if (startNode->station->km < endNode->station->km)
+            current = nextStation(current);
+        else
+            current = prevStation(current);
     }
 
     if (path->pathSize == path->sizeFactor * STD_PATH_SIZE) {
@@ -492,6 +515,13 @@ void shortestPathSmallToBig(Path *path) {
     free(path->stations);
     free(path);
 }
+
+void shortestPathBigToSmall(Path *path) {
+    int32_t distances[path->pathSize];
+
+}
+
+
 
 int main() {
     char currentCommand[20];
