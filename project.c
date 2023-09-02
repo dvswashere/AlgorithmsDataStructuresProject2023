@@ -525,6 +525,11 @@ void shortestPathBigToSmall(Path *path) {
     distances[0] = 0; // first node is starting node, so 0 stations must be crossed to reach it
     previous[0] = -1;
 
+    for (int32_t i = 1; i < path->pathSize; i++) { // setting the distances to all other nodes at infinite
+        distances[i] = INT32_MAX;
+        previous[i] = -1;
+    }
+
     for (int32_t current = 0; current < path->pathSize; current++) {
         for (int32_t i = current + 1; i < path->pathSize && (path->stations[current].km - maxAutonomy(&path->stations[current]) <= path->stations[i].km); i++) {
             newDist = distances[current] + 1; // all neighbors are at distance 1
@@ -536,17 +541,16 @@ void shortestPathBigToSmall(Path *path) {
         }
     }
 
-    int32_t index = path->pathSize;
-
+    int32_t index = path->pathSize - 1;
     while (index >= 0) {
-        if (previous[index] < 0) {
+        if (index > 0 && previous[index] < 0) {
             printf("nessun percorso\n");
             free(path->stations);
             free(path);
             return;
         }
 
-        path->stations[index].km = path->stations[index].km * -1; // mark as used station
+        path->stations[index].km *= -1; // mark as used
         index = previous[index];
     }
 
@@ -556,6 +560,8 @@ void shortestPathBigToSmall(Path *path) {
             printf("%d ", path->stations[i].km);
         }
     }
+
+    path->stations[path->pathSize-1].km *= -1;
     printf("%d\n", path->stations[path->pathSize-1].km);
     free(path->stations);
     free(path);
