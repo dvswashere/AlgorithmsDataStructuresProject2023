@@ -484,7 +484,7 @@ int32_t abs(int32_t n) {
     return n;
 }
 
-    // the following function is used to calculate the shortest path from the START to the END
+// the following function is used to calculate the shortest path when START.km < END.km
 void shortestPathSmallToBig(Path *path) {
     int32_t current = 0;
     int32_t start = 0;
@@ -516,9 +516,49 @@ void shortestPathSmallToBig(Path *path) {
     free(path);
 }
 
+// the following function is used to calculate the shortest path when START.km > END.km
 void shortestPathBigToSmall(Path *path) {
     int32_t distances[path->pathSize];
+    int32_t previous[path->pathSize];
+    int32_t newDist;
 
+    distances[0] = 0; // first node is starting node, so 0 stations must be crossed to reach it
+    previous[0] = -1;
+
+    for (int32_t current = 0; current < path->pathSize; current++) {
+        for (int32_t i = current + 1; i < path->pathSize && (path->stations[current].km - maxAutonomy(&path->stations[current]) <= path->stations[i].km); i++) {
+            newDist = distances[current] + 1; // all neighbors are at distance 1
+
+            if (newDist <= distances[i]) {
+                distances[i] = newDist;
+                previous[i] = current;
+            }
+        }
+    }
+
+    int32_t index = path->pathSize;
+
+    while (index >= 0) {
+        if (previous[index] < 0) {
+            printf("nessun percorso\n");
+            free(path->stations);
+            free(path);
+            return;
+        }
+
+        path->stations[index].km = path->stations[index].km * -1; // mark as used station
+        index = previous[index];
+    }
+
+    for (int i = 0; i < path->pathSize - 1; i++) {
+        if (path->stations[i].km <= 0) {
+            path->stations[i].km = path->stations[i].km * -1; // restore the original value
+            printf("%d ", path->stations[i].km);
+        }
+    }
+    printf("%d\n", path->stations[path->pathSize-1].km);
+    free(path->stations);
+    free(path);
 }
 
 
@@ -645,7 +685,7 @@ int main() {
             else if (start < end) {
                 shortestPathSmallToBig(buildFullPath(startNode, endNode));
             } else {
-                printf("BIG TO SMALL\n");
+                shortestPathBigToSmall(buildFullPath(startNode, endNode));
             }
         }
     }
