@@ -1,6 +1,6 @@
 # Highway pathfinder algorithm
 
-This repository contains my solution to the 2023 Algorithms and data structures final thesis project for the BSc in Engineering of Computing Systems at Politecnico di Milano which was awarded 30 cum laude out of 30.
+This repository contains my solution to the 2023 Algorithms and data structures final thesis project for the B.S. in Engineering of Computing Systems at Politecnico di Milano which was awarded 30 cum laude out of 30.
 
 Given an input in stdin, the program, which must be written in C, has to output the solution to stdout.
 
